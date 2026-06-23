@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/error-handler.middleware';
 import { requestContext } from './middleware/request-context.middleware';
 import type { DepsFactory } from './request-controllers';
 import { buildApiRouter } from './routes';
+import { HOSTING_UI_HTML } from './ui';
 import type { Logger } from './utils/logger';
 
 export { createContainer, createRequestControllersFactory } from './container';
@@ -32,6 +33,12 @@ export function createRouter(opts: CreateRouterOptions): Router {
   // Unauthenticated liveness probe (manifest backend.healthcheck = /health).
   router.get('/health', (_req: Request, res: Response) => {
     res.json({ ok: true, extension: 'cpanel-whm-manager' });
+  });
+
+  // Public UI (manifest frontend.appUrl → iframe). Served BEFORE the API router,
+  // so it requires no tenant context. The API it calls remains authenticated.
+  router.get('/ui', (_req: Request, res: Response) => {
+    res.type('html').send(HOSTING_UI_HTML);
   });
 
   router.use(buildApiRouter({ contextProvider: opts.contextProvider, depsFactory: opts.depsFactory }));

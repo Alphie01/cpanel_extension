@@ -10,30 +10,236 @@
   "trustLevel": "verified",
   "frontend": {
     "enabled": true,
+    "appUrl": "https://hosting.relationai.com.tr/ui",
     "routes": [
       {
         "path": "/dashboard/extensions/hosting-control",
         "label": "Hosting Control",
         "icon": "Server",
         "requiredPermissions": ["hosting_control.view"]
+      }
+    ],
+    "views": [
+      {
+        "key": "servers",
+        "title": "Sunucular",
+        "permission": "hosting_control.servers.view",
+        "data": { "method": "GET", "path": "api/extensions/cpanel-whm-manager/servers", "itemsKey": "items" },
+        "columns": [
+          { "key": "name", "label": "Ad" },
+          { "key": "hostname", "label": "Host" },
+          { "key": "port", "label": "Port", "type": "number" },
+          { "key": "status", "label": "Durum", "type": "badge" },
+          { "key": "verifySsl", "label": "SSL", "type": "boolean" },
+          { "key": "tokenCount", "label": "Token", "type": "number" },
+          { "key": "lastCheckedAt", "label": "Son kontrol", "type": "date" }
+        ],
+        "actions": [
+          {
+            "key": "create",
+            "label": "Sunucu ekle",
+            "method": "POST",
+            "path": "api/extensions/cpanel-whm-manager/servers",
+            "scope": "collection",
+            "fields": [
+              { "name": "name", "label": "Ad", "required": true },
+              { "name": "hostname", "label": "Host (whm.example.com)", "required": true },
+              { "name": "port", "label": "Port (2087)", "type": "number" },
+              { "name": "verifySsl", "label": "SSL doğrula", "type": "boolean" },
+              { "name": "notes", "label": "Not" }
+            ]
+          },
+          {
+            "key": "add_token",
+            "label": "Token ekle",
+            "method": "POST",
+            "path": "api/extensions/cpanel-whm-manager/servers/{id}/tokens",
+            "scope": "row",
+            "fields": [
+              { "name": "label", "label": "Etiket", "required": true },
+              { "name": "whmUser", "label": "WHM kullanıcı (root)", "required": true },
+              { "name": "token", "label": "API token", "required": true, "secret": true }
+            ]
+          },
+          {
+            "key": "test",
+            "label": "Test",
+            "method": "POST",
+            "path": "api/extensions/cpanel-whm-manager/servers/{id}/test-connection",
+            "scope": "row"
+          },
+          {
+            "key": "sync",
+            "label": "Senkronize et",
+            "method": "POST",
+            "path": "api/extensions/cpanel-whm-manager/servers/{id}/sync",
+            "scope": "row"
+          },
+          {
+            "key": "delete",
+            "label": "Sil",
+            "method": "DELETE",
+            "path": "api/extensions/cpanel-whm-manager/servers/{id}",
+            "scope": "row",
+            "danger": true,
+            "confirm": "Sunucu ve tokenları silinsin mi?"
+          }
+        ]
       },
       {
-        "path": "/dashboard/extensions/hosting-control/servers",
-        "label": "Servers",
-        "icon": "HardDrive",
-        "requiredPermissions": ["hosting_control.servers.view"]
-      },
-      {
-        "path": "/dashboard/extensions/hosting-control/accounts",
-        "label": "Accounts",
-        "icon": "Users",
-        "requiredPermissions": ["hosting_control.accounts.view"]
-      },
-      {
-        "path": "/dashboard/extensions/hosting-control/deployments",
-        "label": "Deployments",
-        "icon": "UploadCloud",
-        "requiredPermissions": ["hosting_control.deployments.view"]
+        "key": "accounts",
+        "title": "Hesaplar",
+        "permission": "hosting_control.accounts.view",
+        "data": { "method": "GET", "path": "api/extensions/cpanel-whm-manager/accounts", "itemsKey": "items" },
+        "columns": [
+          { "key": "cpanelUser", "label": "Kullanıcı" },
+          { "key": "domain", "label": "Alan adı" },
+          { "key": "plan", "label": "Paket" },
+          { "key": "diskUsedMb", "label": "Disk (MB)", "type": "number" },
+          { "key": "suspended", "label": "Askıda", "type": "boolean" },
+          { "key": "lastSyncedAt", "label": "Son senkron", "type": "date" }
+        ],
+        "actions": [
+          {
+            "key": "refresh",
+            "label": "Yenile",
+            "method": "POST",
+            "path": "api/extensions/cpanel-whm-manager/accounts/{id}/refresh",
+            "scope": "row"
+          }
+        ],
+        "detail": {
+          "title": "Hesap detayı",
+          "idKey": "id",
+          "sections": [
+            {
+              "key": "metrics",
+              "title": "Metrikler",
+              "type": "fields",
+              "permission": "hosting_control.metrics.view",
+              "data": { "method": "GET", "path": "api/extensions/cpanel-whm-manager/accounts/{id}/metrics" },
+              "fields": [
+                { "key": "diskUsedMb", "label": "Disk kullanılan (MB)", "type": "number" },
+                { "key": "diskLimitMb", "label": "Disk limit (MB)", "type": "number" },
+                { "key": "bandwidthUsedMb", "label": "Bant genişliği (MB)", "type": "number" },
+                { "key": "emailAccounts", "label": "E-posta hesabı", "type": "number" },
+                { "key": "databases", "label": "Veritabanı", "type": "number" },
+                { "key": "addonDomains", "label": "Addon domain", "type": "number" },
+                { "key": "subdomains", "label": "Subdomain", "type": "number" },
+                { "key": "phpVersion", "label": "PHP sürümü" },
+                { "key": "suspended", "label": "Askıda", "type": "boolean" }
+              ]
+            },
+            {
+              "key": "emails",
+              "title": "E-posta hesapları",
+              "type": "table",
+              "permission": "hosting_control.email.view",
+              "data": { "method": "GET", "path": "api/extensions/cpanel-whm-manager/accounts/{id}/email-accounts" },
+              "columns": [
+                { "key": "email", "label": "Adres" },
+                { "key": "quotaMb", "label": "Kota (MB)", "type": "number" },
+                { "key": "usedMb", "label": "Kullanılan (MB)", "type": "number" },
+                { "key": "suspended", "label": "Askıda", "type": "boolean" }
+              ],
+              "actions": [
+                {
+                  "key": "create",
+                  "label": "E-posta ekle",
+                  "method": "POST",
+                  "path": "api/extensions/cpanel-whm-manager/accounts/{id}/email-accounts",
+                  "scope": "collection",
+                  "permission": "hosting_control.email.manage",
+                  "fields": [
+                    { "name": "user", "label": "Kullanıcı", "required": true },
+                    { "name": "domain", "label": "Domain", "required": true },
+                    { "name": "password", "label": "Parola", "required": true, "secret": true },
+                    { "name": "quotaMb", "label": "Kota (MB, 0=sınırsız)", "type": "number" }
+                  ]
+                },
+                {
+                  "key": "delete",
+                  "label": "Sil",
+                  "method": "DELETE",
+                  "path": "api/extensions/cpanel-whm-manager/accounts/{id}/email-accounts/{rowId}",
+                  "scope": "row",
+                  "rowKey": "email",
+                  "permission": "hosting_control.email.manage",
+                  "danger": true,
+                  "confirm": "E-posta hesabı silinsin mi?"
+                }
+              ]
+            },
+            {
+              "key": "domains",
+              "title": "Alan adları",
+              "type": "table",
+              "permission": "hosting_control.domains.view",
+              "data": { "method": "GET", "path": "api/extensions/cpanel-whm-manager/accounts/{id}/domains" },
+              "columns": [
+                { "key": "domain", "label": "Domain" },
+                { "key": "type", "label": "Tip", "type": "badge" },
+                { "key": "sslStatus", "label": "SSL", "type": "badge" }
+              ],
+              "actions": [
+                {
+                  "key": "autossl",
+                  "label": "AutoSSL çalıştır",
+                  "method": "POST",
+                  "path": "api/extensions/cpanel-whm-manager/accounts/{id}/domains/autossl",
+                  "scope": "collection",
+                  "permission": "hosting_control.domains.manage"
+                }
+              ]
+            },
+            {
+              "key": "databases",
+              "title": "Veritabanları",
+              "type": "table",
+              "permission": "hosting_control.databases.view",
+              "data": { "method": "GET", "path": "api/extensions/cpanel-whm-manager/accounts/{id}/databases", "itemsKey": "databases" },
+              "columns": [
+                { "key": "name", "label": "Ad" },
+                { "key": "users", "label": "Kullanıcılar" },
+                { "key": "sizeMb", "label": "Boyut (MB)", "type": "number" }
+              ],
+              "actions": [
+                {
+                  "key": "create",
+                  "label": "Veritabanı oluştur",
+                  "method": "POST",
+                  "path": "api/extensions/cpanel-whm-manager/accounts/{id}/databases",
+                  "scope": "collection",
+                  "permission": "hosting_control.databases.manage",
+                  "fields": [ { "name": "name", "label": "Ad", "required": true } ]
+                },
+                {
+                  "key": "create_user",
+                  "label": "Kullanıcı oluştur",
+                  "method": "POST",
+                  "path": "api/extensions/cpanel-whm-manager/accounts/{id}/database-users",
+                  "scope": "collection",
+                  "permission": "hosting_control.databases.manage",
+                  "fields": [
+                    { "name": "name", "label": "Kullanıcı", "required": true },
+                    { "name": "password", "label": "Parola", "required": true, "secret": true }
+                  ]
+                },
+                {
+                  "key": "delete",
+                  "label": "Sil",
+                  "method": "DELETE",
+                  "path": "api/extensions/cpanel-whm-manager/accounts/{id}/databases/{rowId}?confirm=true",
+                  "scope": "row",
+                  "rowKey": "name",
+                  "permission": "hosting_control.databases.manage",
+                  "danger": true,
+                  "confirm": "Veritabanı silinsin mi? Bu işlem geri alınamaz."
+                }
+              ]
+            }
+          ]
+        }
       }
     ]
   },

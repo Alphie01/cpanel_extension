@@ -25,6 +25,71 @@ const envSchema = z.object({
   description: z.string().optional(),
 });
 
+// ── Native declarative views (dashboard renders tables/forms from these) ──────
+const viewColumnSchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  type: z.enum(['text', 'number', 'boolean', 'date', 'badge']).optional(),
+});
+
+const viewActionFieldSchema = z.object({
+  name: z.string().min(1),
+  label: z.string().min(1),
+  type: z.string().optional(),
+  required: z.boolean().optional(),
+  secret: z.boolean().optional(),
+});
+
+const viewActionSchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  method: z.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']),
+  path: z.string().min(1),
+  scope: z.enum(['collection', 'row']),
+  fields: z.array(viewActionFieldSchema).optional(),
+  permission: z.string().optional(),
+  rowKey: z.string().optional(),
+  danger: z.boolean().optional(),
+  confirm: z.string().optional(),
+});
+
+// Drill-down detail (row → sections). A section is either a single object
+// rendered as key/value fields, or an array rendered as a table.
+const detailSectionSchema = z.object({
+  key: z.string().min(1),
+  title: z.string().min(1),
+  type: z.enum(['fields', 'table']),
+  permission: z.string().min(1),
+  data: z.object({
+    method: z.enum(['GET', 'POST']),
+    path: z.string().min(1),
+    itemsKey: z.string().optional(),
+  }),
+  fields: z.array(viewColumnSchema).optional(),
+  columns: z.array(viewColumnSchema).optional(),
+  actions: z.array(viewActionSchema).optional(),
+});
+
+const detailSchema = z.object({
+  title: z.string().min(1),
+  idKey: z.string().min(1),
+  sections: z.array(detailSectionSchema).min(1),
+});
+
+const viewSchema = z.object({
+  key: z.string().min(1),
+  title: z.string().min(1),
+  permission: z.string().min(1),
+  data: z.object({
+    method: z.enum(['GET', 'POST']),
+    path: z.string().min(1),
+    itemsKey: z.string().optional(),
+  }),
+  columns: z.array(viewColumnSchema).min(1),
+  actions: z.array(viewActionSchema).optional(),
+  detail: detailSchema.optional(),
+});
+
 const manifestSchema = z.object({
   name: z.string().min(1),
   slug: z.string().regex(SLUG_RE, 'slug must be URL-safe kebab-case'),
@@ -37,13 +102,19 @@ const manifestSchema = z.object({
   trustLevel: z.string().min(1),
   frontend: z.object({
     enabled: z.boolean(),
+    appUrl: z.string().optional(),
     routes: z.array(routeSchema),
+    views: z.array(viewSchema).optional(),
   }),
   backend: z.object({
     enabled: z.boolean(),
     apiPrefix: z.string(),
-    entrypoint: z.string().min(1),
-    healthcheck: z.string().startsWith('/'),
+    // entrypoint (in-process) and baseUrl/healthUrl (out-of-process) are both
+    // valid depending on the runtime model; require at least one health target.
+    entrypoint: z.string().min(1).optional(),
+    healthcheck: z.string().startsWith('/').optional(),
+    baseUrl: z.string().optional(),
+    healthUrl: z.string().optional(),
   }),
   database: z.object({
     enabled: z.boolean(),
@@ -111,6 +182,40 @@ export function validateManifest(input: unknown): ValidationResult {
     for (const required of route.requiredPermissions) {
       if (!permSet.has(required)) {
         errors.push(`route ${route.path} requires "${required}" which is not declared in permissions`);
+      }
+    }
+  }
+
+  // Views: permission must be declared; data/action paths must live under the API.
+  const gatewayPrefix = m.backend.apiPrefix.replace(/^\//, '');
+  const checkAction = (
+    label: string,
+    action: { key: string; path: string; permission?: string },
+  ): void => {
+    if (!action.path.startsWith(gatewayPrefix)) {
+      errors.push(`${label} action "${action.key}" path must be under "${gatewayPrefix}"`);
+    }
+    if (action.permission && !permSet.has(action.permission)) {
+      errors.push(`${label} action "${action.key}" requires "${action.permission}" which is not declared`);
+    }
+  };
+  for (const view of m.frontend.views ?? []) {
+    if (!permSet.has(view.permission)) {
+      errors.push(`view "${view.key}" requires "${view.permission}" which is not declared in permissions`);
+    }
+    if (!view.data.path.startsWith(gatewayPrefix)) {
+      errors.push(`view "${view.key}" data.path must be under "${gatewayPrefix}"`);
+    }
+    for (const action of view.actions ?? []) checkAction(`view "${view.key}"`, action);
+    for (const section of view.detail?.sections ?? []) {
+      if (!permSet.has(section.permission)) {
+        errors.push(`view "${view.key}" detail section "${section.key}" requires "${section.permission}" which is not declared`);
+      }
+      if (!section.data.path.startsWith(gatewayPrefix)) {
+        errors.push(`view "${view.key}" detail section "${section.key}" data.path must be under "${gatewayPrefix}"`);
+      }
+      for (const action of section.actions ?? []) {
+        checkAction(`view "${view.key}" section "${section.key}"`, action);
       }
     }
   }

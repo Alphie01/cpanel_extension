@@ -3,6 +3,7 @@
  * extension works whether the host injects an authenticated context in-process
  * or proxies it as gateway headers. */
 import type { Request } from 'express';
+import type { RequestControllers } from '../request-controllers';
 
 export const EXTENSION_SLUG = 'cpanel-whm-manager';
 
@@ -30,5 +31,6 @@ declare module 'express-serve-static-core' {
     tenant?: TenantContext;
     requestId?: string;
     validated?: ValidatedData;
+    appDeps?: RequestControllers;
   }
 }

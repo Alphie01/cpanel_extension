@@ -3,7 +3,6 @@
  * run without a database or network. */
 import express, { type Express } from 'express';
 import { API_PREFIX, createRouter } from '../../src/backend/index';
-import type { AppDependencies } from '../../src/backend/container';
 import { AccountsController } from '../../src/backend/controllers/accounts.controller';
 import { DatabasesController } from '../../src/backend/controllers/databases.controller';
 import { DomainsController } from '../../src/backend/controllers/domains.controller';
@@ -20,6 +19,7 @@ import { HostingSyncService } from '../../src/backend/services/hosting-sync.serv
 import { ServersService } from '../../src/backend/services/servers.service';
 import { TokensService } from '../../src/backend/services/tokens.service';
 import type { WhmApiClient } from '../../src/backend/services/whm-api.client';
+import type { RequestControllers } from '../../src/backend/request-controllers';
 import { createCryptoService, type CryptoService } from '../../src/backend/utils/crypto';
 import type { Logger } from '../../src/backend/utils/logger';
 import {
@@ -114,22 +114,24 @@ export function buildTestApp(opts: { whm?: WhmApiClient; cpanel?: CpanelApiClien
     silentLogger,
   );
 
-  const deps: AppDependencies = {
-    contextProvider: new TestContextProvider(),
+  const controllers: RequestControllers = {
     serversController: new ServersController(serversService),
     tokensController: new TokensController(tokensService),
     accountsController: new AccountsController(accountsService, syncService),
     emailController: new EmailController(emailService),
     domainsController: new DomainsController(domainsService),
     databasesController: new DatabasesController(databasesService),
-    syncTenant: (tenantId) => syncService.syncTenant(tenantId),
-    logger: silentLogger,
-    port: 0,
-    dispose: async () => undefined,
   };
 
   const app = express();
-  app.use(API_BASE, createRouter(deps));
+  app.use(
+    API_BASE,
+    createRouter({
+      contextProvider: new TestContextProvider(),
+      depsFactory: () => controllers,
+      logger: silentLogger,
+    }),
+  );
   return {
     app,
     serversRepo,
@@ -138,6 +140,6 @@ export function buildTestApp(opts: { whm?: WhmApiClient; cpanel?: CpanelApiClien
     audit,
     crypto,
     syncService,
-    syncTenant: deps.syncTenant,
+    syncTenant: (tenantId: string) => syncService.syncTenant(tenantId),
   };
 }

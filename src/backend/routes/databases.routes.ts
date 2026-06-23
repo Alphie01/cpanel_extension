@@ -9,50 +9,49 @@ import {
   dbNameParamSchema,
   dbUserParamSchema,
 } from '../../shared/schemas/database.schema';
-import type { DatabasesController } from '../controllers/databases.controller';
 import { requirePermission } from '../middleware/require-permission.middleware';
 import { validate } from '../middleware/validate.middleware';
-import { asyncHandler } from '../utils/async-handler';
+import { reqHandler } from '../utils/request-handler';
 import { idParamSchema } from '../validators/common.validators';
 
-export function databasesRoutes(controller: DatabasesController): Router {
+export function databasesRoutes(): Router {
   const router = Router();
 
   router.get(
     '/accounts/:id/databases',
     requirePermission(PERMISSIONS.databases.view),
     validate({ params: idParamSchema }),
-    asyncHandler(controller.overview),
+    reqHandler((d) => d.databasesController.overview),
   );
   router.post(
     '/accounts/:id/databases',
     requirePermission(PERMISSIONS.databases.manage),
     validate({ params: idParamSchema, body: createDatabaseSchema }),
-    asyncHandler(controller.createDatabase),
+    reqHandler((d) => d.databasesController.createDatabase),
   );
   router.post(
     '/accounts/:id/database-users',
     requirePermission(PERMISSIONS.databases.manage),
     validate({ params: idParamSchema, body: createDatabaseUserSchema }),
-    asyncHandler(controller.createUser),
+    reqHandler((d) => d.databasesController.createUser),
   );
   router.post(
     '/accounts/:id/database-assignments',
     requirePermission(PERMISSIONS.databases.manage),
     validate({ params: idParamSchema, body: assignDatabaseUserSchema }),
-    asyncHandler(controller.assignUser),
+    reqHandler((d) => d.databasesController.assignUser),
   );
   router.delete(
     '/accounts/:id/databases/:dbName',
     requirePermission(PERMISSIONS.databases.manage),
     validate({ params: dbNameParamSchema }),
-    asyncHandler(controller.deleteDatabase),
+    reqHandler((d) => d.databasesController.deleteDatabase),
   );
   router.delete(
     '/accounts/:id/database-users/:dbUser',
     requirePermission(PERMISSIONS.databases.manage),
     validate({ params: dbUserParamSchema }),
-    asyncHandler(controller.deleteUser),
+    reqHandler((d) => d.databasesController.deleteUser),
   );
 
   return router;

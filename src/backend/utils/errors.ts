@@ -46,6 +46,8 @@ export const Errors = {
     new ExtensionError(ExtErrorCode.NOT_FOUND, `${entity} not found.`, 404),
   conflict: (message: string, details?: Record<string, unknown>) =>
     new ExtensionError(ExtErrorCode.CONFLICT, message, 409, details),
+  notConfigured: (message = 'Extension is not configured (missing DSN or encryption key).') =>
+    new ExtensionError(ExtErrorCode.NOT_CONFIGURED, message, 503),
   notImplemented: (feature: string) =>
     new ExtensionError(
       ExtErrorCode.NOT_IMPLEMENTED,

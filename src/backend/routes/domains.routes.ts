@@ -2,26 +2,25 @@
  * trigger AutoSSL. */
 import { Router } from 'express';
 import { PERMISSIONS } from '../../shared/constants/permissions';
-import type { DomainsController } from '../controllers/domains.controller';
 import { requirePermission } from '../middleware/require-permission.middleware';
 import { validate } from '../middleware/validate.middleware';
-import { asyncHandler } from '../utils/async-handler';
+import { reqHandler } from '../utils/request-handler';
 import { idParamSchema } from '../validators/common.validators';
 
-export function domainsRoutes(controller: DomainsController): Router {
+export function domainsRoutes(): Router {
   const router = Router();
 
   router.get(
     '/accounts/:id/domains',
     requirePermission(PERMISSIONS.domains.view),
     validate({ params: idParamSchema }),
-    asyncHandler(controller.list),
+    reqHandler((d) => d.domainsController.list),
   );
   router.post(
     '/accounts/:id/domains/autossl',
     requirePermission(PERMISSIONS.domains.manage),
     validate({ params: idParamSchema }),
-    asyncHandler(controller.autoSsl),
+    reqHandler((d) => d.domainsController.autoSsl),
   );
 
   return router;

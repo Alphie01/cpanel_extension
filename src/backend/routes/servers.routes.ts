@@ -1,11 +1,11 @@
-/* Server routes. Middleware order per route: (tenantContext is applied once at
- * the router root) → requirePermission → validate → controller. */
+/* Server routes. Middleware order per route: (tenantContext + requestDeps applied
+ * once at the router root) → requirePermission → validate → controller (resolved
+ * per request from req.appDeps). */
 import { Router } from 'express';
 import { PERMISSIONS } from '../../shared/constants/permissions';
-import type { ServersController } from '../controllers/servers.controller';
 import { requirePermission } from '../middleware/require-permission.middleware';
 import { validate } from '../middleware/validate.middleware';
-import { asyncHandler } from '../utils/async-handler';
+import { reqHandler } from '../utils/request-handler';
 import { idParamSchema } from '../validators/common.validators';
 import {
   createServerSchema,
@@ -13,44 +13,44 @@ import {
   updateServerSchema,
 } from '../validators/server.validators';
 
-export function serversRoutes(controller: ServersController): Router {
+export function serversRoutes(): Router {
   const router = Router();
 
   router.get(
     '/servers',
     requirePermission(PERMISSIONS.servers.view),
     validate({ query: listServersQuerySchema }),
-    asyncHandler(controller.list),
+    reqHandler((d) => d.serversController.list),
   );
   router.post(
     '/servers',
     requirePermission(PERMISSIONS.servers.create),
     validate({ body: createServerSchema }),
-    asyncHandler(controller.create),
+    reqHandler((d) => d.serversController.create),
   );
   router.get(
     '/servers/:id',
     requirePermission(PERMISSIONS.servers.view),
     validate({ params: idParamSchema }),
-    asyncHandler(controller.getById),
+    reqHandler((d) => d.serversController.getById),
   );
   router.patch(
     '/servers/:id',
     requirePermission(PERMISSIONS.servers.edit),
     validate({ params: idParamSchema, body: updateServerSchema }),
-    asyncHandler(controller.update),
+    reqHandler((d) => d.serversController.update),
   );
   router.delete(
     '/servers/:id',
     requirePermission(PERMISSIONS.servers.delete),
     validate({ params: idParamSchema }),
-    asyncHandler(controller.remove),
+    reqHandler((d) => d.serversController.remove),
   );
   router.post(
     '/servers/:id/test-connection',
     requirePermission(PERMISSIONS.servers.testConnection),
     validate({ params: idParamSchema }),
-    asyncHandler(controller.testConnection),
+    reqHandler((d) => d.serversController.testConnection),
   );
 
   return router;

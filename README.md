@@ -88,7 +88,10 @@ npm run build           # prisma generate + tsc
 
 ## Troubleshooting
 
-- **Boot error about the encryption key** → `EXT_HOSTING_ENCRYPTION_KEY` is missing or not 32 bytes (base64). Regenerate with `openssl rand -base64 32`.
-- **401 `TENANT_CONTEXT_MISSING`** → host is not injecting `req.auth` (authenticated mode) or headers/HMAC are wrong (header mode).
+- **Container exits: `Cannot find module dist/backend/standalone.js`** → the image was built from a stale source (before `src/backend/standalone.ts` existed) or `tsconfig.build.json` `rootDir` was wrong. Rebuild from current source; `npm run build` must produce `dist/backend/standalone.js`.
+- **Container crash-loops at boot** → should no longer happen: the out-of-process container (`standalone.ts`) boots with no secrets. If it still restarts, check the logs for a non-config error. `/health` must return `{ ok: true }` even before any tenant is configured.
+- **`503 NOT_CONFIGURED` on API calls** → the request had no encryption key / DSN. In header mode the gateway must inject `x-ext-env-ext_hosting_encryption_key` + `x-ext-env-database_url`; or set them as container `process.env` for a single-tenant deployment.
+- **In-process/worker boot error about the encryption key** → `createContainer()`/`loadEnv()` requires `EXT_HOSTING_ENCRYPTION_KEY` (base64, 32 bytes). Regenerate with `openssl rand -base64 32`.
+- **401 `UNAUTHENTICATED` / `TENANT_CONTEXT_MISSING`** → host not injecting `req.auth` (authenticated mode), or `x-ext-token` HMAC invalid / `EXT_PLATFORM_JWT_SECRET` not set (header mode).
 - **`WHM_AUTH_FAILED` on test-connection** → token invalid/expired or insufficient WHM ACL.
 - **`WHM_UNREACHABLE`** → host/port wrong, firewall, or TLS failure (try toggling per-server SSL verification if self-signed).

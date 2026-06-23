@@ -41,6 +41,33 @@ function parseIntOr(value: string | undefined, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+/* Boot configuration for the out-of-process container. Unlike loadEnv(), this
+ * does NOT require per-tenant secrets (DSN / encryption key) — those arrive per
+ * request via x-ext-env-* headers — so the container can boot and serve /health
+ * with no secrets configured. */
+export interface BootConfig {
+  port: number;
+  tenantContextMode: TenantContextMode;
+  platformJwtSecret: string | null;
+  whmTimeoutMs: number;
+  whmVerifySsl: boolean;
+}
+
+export function loadBootEnv(source: NodeJS.ProcessEnv = process.env): BootConfig {
+  // Boot-resilient: never throws on missing secrets. Header-mode requests fail
+  // clearly per request if EXT_PLATFORM_JWT_SECRET is absent.
+  const mode: TenantContextMode =
+    source.EXT_HOSTING_TENANT_CONTEXT_MODE === 'header' ? 'header' : 'authenticated';
+  const platformJwtSecret = source.EXT_PLATFORM_JWT_SECRET ?? null;
+  return {
+    port: parseIntOr(source.PORT, 8080),
+    tenantContextMode: mode,
+    platformJwtSecret,
+    whmTimeoutMs: parseIntOr(source.EXT_HOSTING_WHM_TIMEOUT_MS, 15000),
+    whmVerifySsl: parseBool(source.EXT_HOSTING_WHM_VERIFY_SSL, true),
+  };
+}
+
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): EnvConfig {
   const parsed = rawSchema.safeParse(source);
   if (!parsed.success) {

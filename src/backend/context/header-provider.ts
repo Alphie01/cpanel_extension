@@ -30,13 +30,14 @@ function header(req: Request, name: string): string | null {
 }
 
 export class HeaderContextProvider implements TenantContextProvider {
-  constructor(private readonly jwtSecret: string) {
-    if (!jwtSecret) {
-      throw new Error('HeaderContextProvider requires a platform JWT secret.');
-    }
-  }
+  // The secret may be empty at boot (container starts before it is configured);
+  // we fail clearly per request rather than crash-looping the container.
+  constructor(private readonly jwtSecret: string) {}
 
   async resolve(req: Request): Promise<TenantContext> {
+    if (!this.jwtSecret) {
+      throw Errors.unauthenticated('Platform JWT secret is not configured for this extension.');
+    }
     const tenantId = header(req, 'x-tenant-id');
     const slug = header(req, 'x-ext-slug');
     const rawToken = header(req, 'x-ext-token');

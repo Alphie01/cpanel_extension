@@ -1,18 +1,17 @@
-/* Account routes. Implemented this release: list, detail, single-account
- * refresh, metrics, and server sync. Still stubbed (real auth + permission +
- * param validation, then 501): email, domains, databases, FTP, and per-account
- * deployment endpoints. */
+/* Account routes. Implemented: list, detail, refresh, metrics, server sync.
+ * Still stubbed (real auth + permission + validation, then 501): FTP and
+ * per-account deployment endpoints. */
 import { Router } from 'express';
 import { listAccountsQuerySchema } from '../../shared/schemas/account.schema';
 import { PERMISSIONS } from '../../shared/constants/permissions';
-import type { AccountsController } from '../controllers/accounts.controller';
 import { makeStubHandler } from '../controllers/stub.controllers';
 import { requirePermission } from '../middleware/require-permission.middleware';
 import { validate } from '../middleware/validate.middleware';
 import { asyncHandler } from '../utils/async-handler';
+import { reqHandler } from '../utils/request-handler';
 import { idParamSchema, serverIdParamSchema } from '../validators/common.validators';
 
-export function accountsRoutes(controller: AccountsController): Router {
+export function accountsRoutes(): Router {
   const router = Router();
   const idParam = { params: idParamSchema };
 
@@ -21,31 +20,31 @@ export function accountsRoutes(controller: AccountsController): Router {
     '/accounts',
     requirePermission(PERMISSIONS.accounts.view),
     validate({ query: listAccountsQuerySchema }),
-    asyncHandler(controller.list),
+    reqHandler((d) => d.accountsController.list),
   );
   router.get(
     '/accounts/:id',
     requirePermission(PERMISSIONS.accounts.view),
     validate(idParam),
-    asyncHandler(controller.getById),
+    reqHandler((d) => d.accountsController.getById),
   );
   router.post(
     '/accounts/:id/refresh',
     requirePermission(PERMISSIONS.accounts.view),
     validate(idParam),
-    asyncHandler(controller.refresh),
+    reqHandler((d) => d.accountsController.refresh),
   );
   router.get(
     '/accounts/:id/metrics',
     requirePermission(PERMISSIONS.metrics.view),
     validate(idParam),
-    asyncHandler(controller.getMetrics),
+    reqHandler((d) => d.accountsController.getMetrics),
   );
   router.post(
     '/servers/:serverId/sync',
     requirePermission(PERMISSIONS.accounts.view),
     validate({ params: serverIdParamSchema }),
-    asyncHandler(controller.syncServer),
+    reqHandler((d) => d.accountsController.syncServer),
   );
 
   // ── Still stubbed (501 after auth + permission + validation) ─────────────

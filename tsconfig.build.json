@@ -1,9 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "rootDir": "src",
     "noEmit": false,
     "sourceMap": true
   },
-  "include": ["src/backend", "src/shared", "src/workers", "prisma/seed.ts"],
+  "include": ["src/backend", "src/shared", "src/workers"],
   "exclude": ["node_modules", "dist", "src/frontend", "tests", "scripts"]
 }

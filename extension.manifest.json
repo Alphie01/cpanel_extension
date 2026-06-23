@@ -41,7 +41,8 @@
     "enabled": true,
     "apiPrefix": "/api/extensions/cpanel-whm-manager",
     "entrypoint": "src/backend/index.ts",
-    "healthcheck": "/health"
+    "baseUrl": "http://cpanel-whm-manager-worker:8080",
+    "healthUrl": "http://cpanel-whm-manager-worker:8080/health"
   },
   "database": {
     "enabled": true,
@@ -127,6 +128,81 @@
       "schedule": "0 */6 * * *",
       "entrypoint": "src/workers/sync.worker.ts",
       "cost": 0
+    }
+  ],
+  "actions": [
+    {
+      "name": "list_servers",
+      "description": "List configured WHM/cPanel server connections (no secrets returned).",
+      "method": "GET",
+      "path": "api/extensions/cpanel-whm-manager/servers",
+      "permission": "hosting_control.servers.view"
+    },
+    {
+      "name": "create_server",
+      "description": "Add a WHM/cPanel server connection.",
+      "method": "POST",
+      "path": "api/extensions/cpanel-whm-manager/servers",
+      "permission": "hosting_control.servers.create",
+      "params": [
+        { "name": "name", "type": "string", "required": true, "description": "Display name for the connection." },
+        { "name": "hostname", "type": "string", "required": true, "description": "WHM host, e.g. whm.example.com." },
+        { "name": "port", "type": "number", "required": false, "description": "WHM port (default 2087)." },
+        { "name": "username", "type": "string", "required": true, "description": "WHM username (e.g. root)." },
+        { "name": "verifySsl", "type": "boolean", "required": false, "description": "Verify the server's TLS certificate." }
+      ]
+    },
+    {
+      "name": "test_connection",
+      "description": "Test connectivity + authentication for a server connection.",
+      "method": "POST",
+      "path": "api/extensions/cpanel-whm-manager/servers/test",
+      "permission": "hosting_control.servers.test_connection",
+      "params": [
+        { "name": "serverId", "type": "string", "required": true, "description": "Server connection id." }
+      ]
+    },
+    {
+      "name": "delete_server",
+      "description": "Delete a server connection and its stored tokens.",
+      "method": "POST",
+      "path": "api/extensions/cpanel-whm-manager/servers/delete",
+      "permission": "hosting_control.servers.delete",
+      "params": [
+        { "name": "serverId", "type": "string", "required": true, "description": "Server connection id." }
+      ]
+    },
+    {
+      "name": "list_tokens",
+      "description": "List the API tokens stored for a server (token values are never returned).",
+      "method": "POST",
+      "path": "api/extensions/cpanel-whm-manager/tokens/list",
+      "permission": "hosting_control.tokens.view",
+      "params": [
+        { "name": "serverId", "type": "string", "required": true, "description": "Server connection id." }
+      ]
+    },
+    {
+      "name": "create_token",
+      "description": "Store an encrypted WHM/cPanel API token for a server.",
+      "method": "POST",
+      "path": "api/extensions/cpanel-whm-manager/tokens",
+      "permission": "hosting_control.tokens.create",
+      "params": [
+        { "name": "serverId", "type": "string", "required": true, "description": "Server connection id." },
+        { "name": "label", "type": "string", "required": true, "description": "Human label for the token." },
+        { "name": "token", "type": "string", "required": true, "description": "WHM API token (stored encrypted at rest)." }
+      ]
+    },
+    {
+      "name": "delete_token",
+      "description": "Delete a stored API token.",
+      "method": "POST",
+      "path": "api/extensions/cpanel-whm-manager/tokens/delete",
+      "permission": "hosting_control.tokens.delete",
+      "params": [
+        { "name": "tokenId", "type": "string", "required": true, "description": "Stored token id." }
+      ]
     }
   ]
 }

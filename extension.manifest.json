@@ -1,0 +1,132 @@
+{
+  "name": "cpanel-whm-manager",
+  "slug": "cpanel-whm-manager",
+  "displayName": "cPanel & WHM Manager",
+  "version": "1.0.0",
+  "description": "Tenant extension to manage WHM/cPanel hosting servers: multi-server connections, encrypted multi-token storage, accounts, metrics, email, domains, databases, FTP, and an SFTP deployment engine. This release ships Server Connections + Multi-Token (encrypted); other modules are registered but return NOT_IMPLEMENTED.",
+  "moduleType": "tenant_extension",
+  "runtime": "node",
+  "language": "typescript",
+  "trustLevel": "verified",
+  "frontend": {
+    "enabled": true,
+    "routes": [
+      {
+        "path": "/dashboard/extensions/hosting-control",
+        "label": "Hosting Control",
+        "icon": "Server",
+        "requiredPermissions": ["hosting_control.view"]
+      },
+      {
+        "path": "/dashboard/extensions/hosting-control/servers",
+        "label": "Servers",
+        "icon": "HardDrive",
+        "requiredPermissions": ["hosting_control.servers.view"]
+      },
+      {
+        "path": "/dashboard/extensions/hosting-control/accounts",
+        "label": "Accounts",
+        "icon": "Users",
+        "requiredPermissions": ["hosting_control.accounts.view"]
+      },
+      {
+        "path": "/dashboard/extensions/hosting-control/deployments",
+        "label": "Deployments",
+        "icon": "UploadCloud",
+        "requiredPermissions": ["hosting_control.deployments.view"]
+      }
+    ]
+  },
+  "backend": {
+    "enabled": true,
+    "apiPrefix": "/api/extensions/cpanel-whm-manager",
+    "entrypoint": "src/backend/index.ts",
+    "healthcheck": "/health"
+  },
+  "database": {
+    "enabled": true,
+    "prismaSchema": "prisma/extension.prisma",
+    "migrationsPath": "prisma/migrations",
+    "seed": "prisma/seed.ts",
+    "tablePrefix": "ext_hosting_"
+  },
+  "docker": {
+    "enabled": true,
+    "dockerfile": "Dockerfile",
+    "serviceName": "cpanel-whm-manager-worker",
+    "internalPort": 8080,
+    "healthcheck": "/health"
+  },
+  "permissions": [
+    "hosting_control.view",
+    "hosting_control.admin",
+    "hosting_control.servers.view",
+    "hosting_control.servers.create",
+    "hosting_control.servers.edit",
+    "hosting_control.servers.delete",
+    "hosting_control.servers.test_connection",
+    "hosting_control.tokens.view",
+    "hosting_control.tokens.create",
+    "hosting_control.tokens.edit",
+    "hosting_control.tokens.delete",
+    "hosting_control.accounts.view",
+    "hosting_control.metrics.view",
+    "hosting_control.email.view",
+    "hosting_control.email.manage",
+    "hosting_control.domains.view",
+    "hosting_control.domains.manage",
+    "hosting_control.databases.view",
+    "hosting_control.databases.manage",
+    "hosting_control.ftp.view",
+    "hosting_control.ftp.manage",
+    "hosting_control.deployments.view",
+    "hosting_control.deployments.run",
+    "hosting_control.deployments.rollback"
+  ],
+  "env": [
+    {
+      "name": "EXT_HOSTING_ENCRYPTION_KEY",
+      "required": true,
+      "secret": true,
+      "description": "Base64-encoded 32-byte key for AES-256-GCM encryption of WHM/cPanel tokens and SFTP credentials."
+    },
+    {
+      "name": "EXT_HOSTING_TENANT_CONTEXT_MODE",
+      "required": false,
+      "secret": false,
+      "description": "authenticated | header. Selects how tenant context is acquired. Default: authenticated."
+    },
+    {
+      "name": "EXT_PLATFORM_JWT_SECRET",
+      "required": false,
+      "secret": true,
+      "description": "Only required when EXT_HOSTING_TENANT_CONTEXT_MODE=header; used to verify the x-ext-token HMAC."
+    },
+    {
+      "name": "EXT_HOSTING_WHM_TIMEOUT_MS",
+      "required": false,
+      "secret": false,
+      "description": "WHM HTTP timeout in ms. Default 15000."
+    },
+    {
+      "name": "EXT_HOSTING_WHM_VERIFY_SSL",
+      "required": false,
+      "secret": false,
+      "description": "true|false default for SSL verification. Per-server override stored on the server row."
+    },
+    {
+      "name": "DATABASE_URL",
+      "required": true,
+      "secret": true,
+      "description": "Tenant-scoped Prisma datasource URL injected by the platform."
+    }
+  ],
+  "jobs": [
+    {
+      "name": "hosting-control-sync",
+      "schedule": "0 */6 * * *",
+      "entrypoint": "src/workers/sync.worker.ts",
+      "cost": 0
+    }
+  ]
+}

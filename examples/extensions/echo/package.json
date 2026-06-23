@@ -1,0 +1,9 @@
+{
+  "name": "ext-echo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reference Relation AI tenant extension.",
+  "main": "src/index.js",
+  "scripts": { "start": "node src/index.js" },
+  "dependencies": { "express": "^4.19.2", "pg": "^8.13.1" }
+}

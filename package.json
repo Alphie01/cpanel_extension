@@ -1,0 +1,75 @@
+{
+  "name": "cpanel-whm-manager",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tenant extension for Relation AI: manage WHM/cPanel hosting servers, encrypted multi-token storage, accounts, metrics, email, domains, databases, FTP, and SFTP deployments.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "prisma": {
+    "schema": "prisma/extension.prisma",
+    "seed": "tsx prisma/seed.ts"
+  },
+  "scripts": {
+    "build": "prisma generate && tsc -p tsconfig.build.json",
+    "start": "node dist/backend/standalone.js",
+    "dev": "tsx watch src/backend/standalone.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:frontend": "tsc -p tsconfig.frontend.json --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "manifest:validate": "tsx scripts/validate-manifest.ts",
+    "migrate": "tsx scripts/migrate.ts",
+    "migrate:all-assigned": "tsx scripts/migrate.ts --all-assigned",
+    "seed": "tsx scripts/seed.ts",
+    "healthcheck": "tsx scripts/healthcheck.ts",
+    "prisma:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "zod": "^3.24.1"
+  },
+  "optionalDependencies": {
+    "adm-zip": "^0.5.16",
+    "ssh2-sftp-client": "^11.0.0"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": ">=5",
+    "react": ">=18",
+    "react-dom": ">=18",
+    "react-router-dom": ">=6"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "react-dom": { "optional": true },
+    "react-router-dom": { "optional": true },
+    "@tanstack/react-query": { "optional": true }
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.62.0",
+    "@types/adm-zip": "^0.5.7",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.17.10",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/supertest": "^6.0.2",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "prisma": "^5.22.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

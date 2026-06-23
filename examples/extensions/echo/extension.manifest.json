@@ -1,0 +1,43 @@
+{
+  "name": "echo",
+  "slug": "echo",
+  "displayName": "Echo (Reference Extension)",
+  "version": "1.0.0",
+  "description": "Reference tenant extension for Relation AI: demonstrates the manifest, namespaced migrations + seed, a gateway-reachable API, a scheduled job with the async report callback, and an iframe UI.",
+  "runtime": "node",
+  "language": "javascript",
+  "moduleType": "tenant_extension",
+  "trustLevel": "verified",
+  "frontend": {
+    "enabled": true,
+    "appUrl": "http://ext-echo:8080/ui",
+    "routes": [
+      { "path": "/dashboard/ext/echo", "label": "Echo", "icon": "Boxes", "requiredPermissions": ["echo.view"] }
+    ]
+  },
+  "backend": {
+    "enabled": true,
+    "baseUrl": "http://ext-echo:8080",
+    "healthUrl": "http://ext-echo:8080/health"
+  },
+  "database": {
+    "enabled": true,
+    "migrationsPath": "prisma/migrations",
+    "seed": "prisma/seed.sql",
+    "tablePrefix": "ext_echo_"
+  },
+  "docker": {
+    "enabled": true,
+    "dockerfile": "Dockerfile",
+    "serviceName": "ext-echo",
+    "internalPort": 8080,
+    "healthcheck": "/health"
+  },
+  "permissions": ["echo.view", "echo.manage"],
+  "env": [
+    { "name": "ECHO_GREETING", "required": false, "secret": false }
+  ],
+  "jobs": [
+    { "name": "echo-sync", "schedule": "*/15 * * * *", "entrypoint": "src/jobs/sync.js", "cost": 0 }
+  ]
+}

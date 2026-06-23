@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.local
+.DS_Store
+
+# Prisma generated client (regenerated via `prisma generate`)
+prisma/generated/
+
+# Editor
+.idea/
+.vscode/

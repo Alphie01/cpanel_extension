@@ -1,0 +1,221 @@
+// cpanel-whm-manager extension schema.
+// Every object is namespaced ext_hosting_* (platform rejects anything else).
+// Every tenant-owned table carries tenantId + createdAt + updatedAt, soft-delete
+// (deletedAt) and a metadata Json? column, with tenant-scoped uniqueness/indexes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+enum ExtHostingServerStatus {
+  ACTIVE
+  INACTIVE
+  UNREACHABLE
+}
+
+enum ExtHostingTokenScope {
+  WHM
+  CPANEL
+}
+
+enum ExtHostingDeploymentStatus {
+  QUEUED
+  UPLOADING
+  EXTRACTING
+  BACKING_UP
+  DEPLOYING
+  VERIFYING
+  COMPLETED
+  FAILED
+  ROLLED_BACK
+}
+
+enum ExtHostingSftpAuthType {
+  PASSWORD
+  PRIVATE_KEY
+}
+
+// ─── [IMPL] Servers ─────────────────────────────────────────────────────────
+model ExtHostingServer {
+  id            String                 @id @default(cuid())
+  tenantId      String
+  name          String
+  hostname      String
+  port          Int                    @default(2087)
+  status        ExtHostingServerStatus @default(INACTIVE)
+  verifySsl     Boolean                @default(true)
+  lastCheckedAt DateTime?
+  lastError     String?
+  notes         String?
+  metadata      Json?
+  createdById   String?
+  updatedById   String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  deletedAt     DateTime?
+
+  tokens      ExtHostingToken[]
+  accounts    ExtHostingAccount[]
+  deployments ExtHostingDeployment[]
+  sftpCreds   ExtHostingSftpCredential[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status])
+  @@index([tenantId, deletedAt])
+  @@map("ext_hosting_servers")
+}
+
+// ─── [IMPL] Tokens (encrypted at rest) ──────────────────────────────────────
+model ExtHostingToken {
+  id          String               @id @default(cuid())
+  tenantId    String
+  serverId    String
+  label       String
+  scope       ExtHostingTokenScope @default(WHM)
+  whmUser     String
+  cpanelUser  String?
+  tokenEnc    String
+  keyId       String               @default("default")
+  lastFour    String?
+  isActive    Boolean              @default(true)
+  lastUsedAt  DateTime?
+  metadata    Json?
+  createdById String?
+  updatedById String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  deletedAt   DateTime?
+
+  server ExtHostingServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, serverId, label])
+  @@index([tenantId, serverId, isActive])
+  @@map("ext_hosting_tokens")
+}
+
+// ─── [STUB] SFTP credentials (separate from tokens) ─────────────────────────
+model ExtHostingSftpCredential {
+  id            String                 @id @default(cuid())
+  tenantId      String
+  serverId      String
+  label         String
+  username      String
+  authType      ExtHostingSftpAuthType @default(PASSWORD)
+  secretEnc     String
+  passphraseEnc String?
+  keyId         String                 @default("default")
+  port          Int                    @default(22)
+  basePath      String?
+  metadata      Json?
+  createdById   String?
+  updatedById   String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  deletedAt     DateTime?
+
+  server ExtHostingServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, serverId, label])
+  @@index([tenantId, serverId])
+  @@map("ext_hosting_sftp_credentials")
+}
+
+// ─── [STUB] Account cache ───────────────────────────────────────────────────
+model ExtHostingAccount {
+  id           String    @id @default(cuid())
+  tenantId     String
+  serverId     String
+  cpanelUser   String
+  domain       String?
+  plan         String?
+  suspended    Boolean   @default(false)
+  rawJson      Json?
+  metadata     Json?
+  lastSyncedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  server ExtHostingServer @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, serverId, cpanelUser])
+  @@index([tenantId, serverId])
+  @@map("ext_hosting_accounts")
+}
+
+// ─── [STUB] Deployments ─────────────────────────────────────────────────────
+model ExtHostingDeployment {
+  id               String                     @id @default(cuid())
+  tenantId         String
+  serverId         String
+  sftpCredentialId String?
+  targetPath       String
+  artifactName     String
+  artifactSize     Int?
+  status           ExtHostingDeploymentStatus @default(QUEUED)
+  backupPath       String?
+  errorMessage     String?
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  metadata         Json?
+  createdById      String?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+  deletedAt        DateTime?
+
+  server ExtHostingServer          @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  logs   ExtHostingDeploymentLog[]
+
+  @@index([tenantId, serverId, status])
+  @@map("ext_hosting_deployments")
+}
+
+// ─── [STUB] Deployment timeline (append-only) ───────────────────────────────
+model ExtHostingDeploymentLog {
+  id           String                     @id @default(cuid())
+  tenantId     String
+  deploymentId String
+  status       ExtHostingDeploymentStatus
+  message      String
+  createdAt    DateTime                   @default(now())
+
+  deployment ExtHostingDeployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, deploymentId, createdAt])
+  @@map("ext_hosting_deployment_logs")
+}
+
+// ─── [IMPL] Operation log (audit sink — never stores plaintext secrets) ─────
+model ExtHostingOperationLog {
+  id            String   @id @default(cuid())
+  tenantId      String
+  userId        String?
+  extensionSlug String   @default("cpanel-whm-manager")
+  action        String
+  entityType    String
+  entityId      String?
+  status        String   @default("SUCCESS")
+  metadata      Json?
+  requestId     String?
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType, entityId])
+  @@map("ext_hosting_operation_logs")
+}
+
+// ─── [IMPL] Extension settings (defaults; seeded idempotently) ──────────────
+model ExtHostingSetting {
+  key         String   @id
+  value       String?
+  description String?
+  updatedAt   DateTime @updatedAt @default(now())
+
+  @@map("ext_hosting_settings")
+}

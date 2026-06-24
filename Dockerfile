@@ -3,6 +3,8 @@
 # for local dev, healthchecks, and the optional out-of-process fallback runner.
 FROM node:20-alpine AS build
 WORKDIR /app
+# OpenSSL is required for Prisma to detect the engine and to run it at runtime.
+RUN apk add --no-cache openssl libc6-compat
 COPY package.json ./package.json
 RUN npm install --no-audit --no-fund
 COPY tsconfig.json tsconfig.build.json ./
@@ -14,6 +16,8 @@ FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=11000
+# The Prisma query engine (linux-musl-openssl-3.0.x) needs libssl.so.3 at runtime.
+RUN apk add --no-cache openssl libc6-compat
 # Least-privilege: run as the built-in non-root node user.
 COPY package.json ./package.json
 RUN npm install --omit=dev --no-audit --no-fund && npm cache clean --force

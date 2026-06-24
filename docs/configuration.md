@@ -9,7 +9,7 @@
 | `EXT_PLATFORM_JWT_SECRET` | header mode only | ✅ | — | Verifies `x-ext-token` HMAC. |
 | `EXT_HOSTING_WHM_TIMEOUT_MS` | — | — | `15000` | WHM HTTP timeout (ms). |
 | `EXT_HOSTING_WHM_VERIFY_SSL` | — | — | `true` | Default SSL verification for new servers. |
-| `PORT` | — | — | `8080` | Standalone/dev server port. |
+| `PORT` | — | — | `11000` | Standalone/dev server port. |
 
 ## Generating the encryption key
 ```bash

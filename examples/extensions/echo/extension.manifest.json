@@ -10,15 +10,15 @@
   "trustLevel": "verified",
   "frontend": {
     "enabled": true,
-    "appUrl": "http://ext-echo:8080/ui",
+    "appUrl": "http://ext-echo:11000/ui",
     "routes": [
       { "path": "/dashboard/ext/echo", "label": "Echo", "icon": "Boxes", "requiredPermissions": ["echo.view"] }
     ]
   },
   "backend": {
     "enabled": true,
-    "baseUrl": "http://ext-echo:8080",
-    "healthUrl": "http://ext-echo:8080/health"
+    "baseUrl": "http://ext-echo:11000",
+    "healthUrl": "http://ext-echo:11000/health"
   },
   "database": {
     "enabled": true,
@@ -30,7 +30,7 @@
     "enabled": true,
     "dockerfile": "Dockerfile",
     "serviceName": "ext-echo",
-    "internalPort": 8080,
+    "internalPort": 11000,
     "healthcheck": "/health"
   },
   "permissions": ["echo.view", "echo.manage"],

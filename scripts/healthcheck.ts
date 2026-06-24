@@ -2,7 +2,7 @@
  * GETs /health on the standalone server; exits 0 if healthy, 1 otherwise. */
 import { get } from 'node:http';
 
-const port = Number(process.env.PORT ?? 8080);
+const port = Number(process.env.PORT ?? 11000);
 
 const req = get(`http://localhost:${port}/health`, (res) => {
   process.exit(res.statusCode === 200 ? 0 : 1);

@@ -52,7 +52,7 @@ cp .env.example .env            # set EXT_HOSTING_ENCRYPTION_KEY (openssl rand -
 npm run prisma:generate
 npm run typecheck
 npm test
-npm run dev                     # standalone server on PORT (default 8080)
+npm run dev                     # standalone server on PORT (default 11000)
 ```
 
 ## Install on the platform (admin)

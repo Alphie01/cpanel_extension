@@ -33,7 +33,7 @@ services:
       - ext-internal
     # Expose only to the internal extension network; the platform gateway proxies in.
     expose:
-      - '8080'
+      - '11000'
 
 networks:
   ext-internal:

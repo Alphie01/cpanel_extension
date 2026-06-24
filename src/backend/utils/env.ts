@@ -60,7 +60,7 @@ export function loadBootEnv(source: NodeJS.ProcessEnv = process.env): BootConfig
     source.EXT_HOSTING_TENANT_CONTEXT_MODE === 'header' ? 'header' : 'authenticated';
   const platformJwtSecret = source.EXT_PLATFORM_JWT_SECRET ?? null;
   return {
-    port: parseIntOr(source.PORT, 8080),
+    port: parseIntOr(source.PORT, 11000),
     tenantContextMode: mode,
     platformJwtSecret,
     whmTimeoutMs: parseIntOr(source.EXT_HOSTING_WHM_TIMEOUT_MS, 15000),
@@ -99,6 +99,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): EnvConfig {
     platformJwtSecret,
     whmTimeoutMs: parseIntOr(env.EXT_HOSTING_WHM_TIMEOUT_MS, 15000),
     whmVerifySsl: parseBool(env.EXT_HOSTING_WHM_VERIFY_SSL, true),
-    port: parseIntOr(env.PORT, 8080),
+    port: parseIntOr(env.PORT, 11000),
   };
 }

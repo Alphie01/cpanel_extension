@@ -247,8 +247,8 @@
     "enabled": true,
     "apiPrefix": "/api/extensions/cpanel-whm-manager",
     "entrypoint": "src/backend/index.ts",
-    "baseUrl": "http://cpanel-whm-manager-worker:11000",
-    "healthUrl": "http://cpanel-whm-manager-worker:11000/health"
+    "baseUrl": "http://ext-cpanel-whm-manager:11000",
+    "healthUrl": "http://ext-cpanel-whm-manager:11000/health"
   },
   "database": {
     "enabled": true,
@@ -260,7 +260,7 @@
   "docker": {
     "enabled": true,
     "dockerfile": "Dockerfile",
-    "serviceName": "cpanel-whm-manager-worker",
+    "serviceName": "ext-cpanel-whm-manager",
     "internalPort": 11000,
     "healthcheck": "/health"
   },

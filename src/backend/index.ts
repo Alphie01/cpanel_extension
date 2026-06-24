@@ -26,8 +26,10 @@ export interface CreateRouterOptions {
 export function createRouter(opts: CreateRouterOptions): Router {
   const router = express.Router();
 
-  // Scoped body parser + correlation id for this extension's routes.
+  // Scoped body parsers (JSON + form-encoded) + correlation id. Forms send
+  // numbers/booleans as strings; the Zod schemas coerce them.
   router.use(express.json({ limit: '1mb' }));
+  router.use(express.urlencoded({ extended: true, limit: '1mb' }));
   router.use(requestContext());
 
   // Unauthenticated liveness probe (manifest backend.healthcheck = /health).

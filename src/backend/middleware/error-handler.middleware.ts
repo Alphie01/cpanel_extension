@@ -21,7 +21,11 @@ function logFields(req: Request, status: number): Record<string, unknown> {
 export function errorHandler(logger: Logger): ErrorRequestHandler {
   return (err, req, res, _next): void => {
     if (isExtensionError(err)) {
-      logger.warn('Handled extension error', { ...logFields(req, err.httpStatus), code: err.code });
+      logger.warn('Handled extension error', {
+        ...logFields(req, err.httpStatus),
+        code: err.code,
+        details: err.details,
+      });
       res.status(err.httpStatus).json(err.toEnvelope());
       return;
     }

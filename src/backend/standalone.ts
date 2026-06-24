@@ -4,7 +4,6 @@
  * until a request provides (or the env supplies) a key + DSN. */
 import 'dotenv/config';
 import express from 'express';
-import { AuthenticatedContextProvider } from './context/authenticated-provider';
 import { HeaderContextProvider } from './context/header-provider';
 import { API_PREFIX, createRequestControllersFactory, createRouter } from './index';
 import { loadBootEnv } from './utils/env';
@@ -14,10 +13,11 @@ function main(): void {
   const bootEnv = loadBootEnv();
   const logger = createLogger();
 
-  const contextProvider =
-    bootEnv.tenantContextMode === 'header'
-      ? new HeaderContextProvider(bootEnv.platformJwtSecret ?? '')
-      : new AuthenticatedContextProvider();
+  // The out-of-process container ALWAYS resolves tenant context from gateway
+  // headers (x-tenant-id, x-user-id, …) regardless of EXT_HOSTING_TENANT_CONTEXT_MODE.
+  // HMAC is enforced when a JWT secret + x-ext-token are present; otherwise the
+  // network is trusted (the container is reachable only via the gateway).
+  const contextProvider = new HeaderContextProvider(bootEnv.platformJwtSecret ?? '');
   const depsFactory = createRequestControllersFactory(bootEnv);
 
   const app = express();

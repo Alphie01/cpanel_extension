@@ -295,6 +295,7 @@
       "name": "EXT_HOSTING_ENCRYPTION_KEY",
       "required": true,
       "secret": true,
+      "generate": true,
       "description": "Base64-encoded 32-byte key for AES-256-GCM encryption of WHM/cPanel tokens and SFTP credentials."
     },
     {
